@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2010.09.04 00:55:08.359.pas,C:\Dokumente und Einstellungen\Aydin\Eigene Dateien\RAD Studio\Projects\Unit1.pas=C:\MyProject\Client New\uMain.pas</Transaction>
+    <Transaction>2010.09.04 00:55:08.359.dfm,C:\Dokumente und Einstellungen\Aydin\Eigene Dateien\RAD Studio\Projects\Unit1.dfm=C:\MyProject\Client New\uMain.dfm</Transaction>
+    <Transaction>2010.09.04 00:55:12.593.dproj,C:\Dokumente und Einstellungen\Aydin\Eigene Dateien\RAD Studio\Projects\Project1.dproj=C:\MyProject\Client New\prjRAT.dproj</Transaction>
+    <Transaction>2010.09.04 01:16:30.875.pas,C:\MyProject\Client New\Unit1.pas=C:\MyProject\Client New\uFunctions.pas</Transaction>
+    <Transaction>2010.09.04 15:40:11.359.pas,C:\MyProject\Client New\Unit1.pas=C:\MyProject\Client New\uParser.pas</Transaction>
+    <Transaction>2010.09.04 15:52:16.906.pas,C:\MyProject\Client New\Unit1.pas=C:\MyProject\Client New\uCommands.pas</Transaction>
+    <Transaction>2010.09.06 00:15:15.046.pas,C:\MyProject\Client New\Unit2.pas=C:\MyProject\Client New\uFilemanager.pas</Transaction>
+    <Transaction>2010.09.06 00:15:15.046.dfm,C:\MyProject\Client New\Unit2.dfm=C:\MyProject\Client New\uFilemanager.dfm</Transaction>
+    <Transaction>2010.09.07 01:09:32.250.pas,C:\MyProject\Client New\Unit1.pas=C:\MyProject\Client New\uFlags.pas</Transaction>
+    <Transaction>2010.09.08 04:41:53.203.pas,C:\MyProject\Client New\Unit3.pas=C:\MyProject\Client New\uManager.pas</Transaction>
+    <Transaction>2010.09.08 04:41:53.203.dfm,C:\MyProject\Client New\Unit3.dfm=C:\MyProject\Client New\uManager.dfm</Transaction>
+    <Transaction>2010.09.10 00:32:43.625.pas,C:\MyProject\Client New\Unit4.pas=C:\MyProject\Client New\uVNC.pas</Transaction>
+    <Transaction>2010.09.10 00:32:43.625.dfm,C:\MyProject\Client New\Unit4.dfm=C:\MyProject\Client New\uVNC.dfm</Transaction>
+    <Transaction>2010.09.18 17:44:57.656.pas,C:\Dokumente und Einstellungen\Aydin\Desktop\DIUcl\Source\DIUclStreams.pas=</Transaction>
+    <Transaction>2010.10.01 13:58:49.968.pas,C:\MyProject\Client New\Unit1.pas=C:\MyProject\Client New\uServ.pas</Transaction>
+    <Transaction>2010.10.01 14:00:44.578.pas,C:\MyProject\Client New\Unit1.pas=C:\MyProject\Client New\uClients.pas</Transaction>
+    <Transaction>2010.10.11 23:01:59.921.pas,C:\Dokumente und Einstellungen\Aydin\Eigene Dateien\DIUcl\Source\DIUclStreams.pas=C:\Dokumente und Einstellungen\Aydin\Eigene Dateien\DIUcl\Source\DIUclStream2s.pas</Transaction>
+    <Transaction>2010.10.21 23:41:47.156.pas,C:\MyProject\Client New\Unit5.pas=C:\MyProject\Client New\uRegistrymanager.pas</Transaction>
+    <Transaction>2010.10.21 23:41:47.156.dfm,C:\MyProject\Client New\Unit5.dfm=C:\MyProject\Client New\uRegistrymanager.dfm</Transaction>
+    <Transaction>2010.10.22 21:55:58.250.pas,C:\Dokumente und Einstellungen\Aydin\Eigene Dateien\DIUcl\Source\DIUclStream2s.pas=</Transaction>
+    <Transaction>2010.10.22 21:56:14.093.pas,C:\Dokumente und Einstellungen\Aydin\Desktop\DIUcl\Source\DISystemCompat.pas=</Transaction>
+    <Transaction>2010.10.22 21:56:47.406.pas,C:\Dokumente und Einstellungen\Aydin\Desktop\DIUcl\Source\DIUclApi.pas=</Transaction>
+    <Transaction>2010.10.22 21:56:50.625.pas,C:\Dokumente und Einstellungen\Aydin\Desktop\DIUcl\Source\DIUcl.pas=</Transaction>
+    <Transaction>2010.10.22 21:58:02.625.pas,C:\MyProject\Client New\DIUcl.pas=</Transaction>
+    <Transaction>2010.10.22 21:58:05.359.pas,C:\MyProject\Client New\DISystemCompat.pas=</Transaction>
+    <Transaction>2010.10.22 21:58:07.828.pas,C:\MyProject\Client New\DIUclApi.pas=</Transaction>
+    <Transaction>2010.10.22 23:41:57.546.pas,C:\Dokumente und Einstellungen\Aydin\Eigene Dateien\Downloads\Aphex_src\Aphex Files\CompressionUnit\CompressionStreamUnit.pas=</Transaction>
+    <Transaction>2010.10.23 12:59:15.484.pas,C:\Dokumente und Einstellungen\Aydin\Eigene Dateien\Downloads\DGScreenSpy_0.2d\DGScreenSpy_0.2d\ZLibEx\ZLibEx.pas=C:\MyProject\Client New\ZLibEx.pas</Transaction>
+    <Transaction>2010.10.23 13:25:01.171.pas,C:\MyProject\Client New\uParser.pas=</Transaction>
+    <Transaction>2010.10.30 21:09:02.906.pas,C:\MyProject\Client New\Unit6.pas=C:\MyProject\Client New\uRemoteShell.pas</Transaction>
+    <Transaction>2010.10.30 21:09:02.906.dfm,C:\MyProject\Client New\Unit6.dfm=C:\MyProject\Client New\uRemoteShell.dfm</Transaction>
+    <Transaction>2010.10.31 11:32:50.125.pas,C:\MyProject\Client New\Unit7.pas=C:\MyProject\Client New\uKeylogger.pas</Transaction>
+    <Transaction>2010.10.31 11:32:50.125.dfm,C:\MyProject\Client New\Unit7.dfm=C:\MyProject\Client New\uKeylogger.dfm</Transaction>
+    <Transaction>2010.11.01 14:54:21.312.pas,C:\MyProject\Client New\Unit8.pas=C:\MyProject\Client New\uRegAdd.pas</Transaction>
+    <Transaction>2010.11.01 14:54:21.312.dfm,C:\MyProject\Client New\Unit8.dfm=C:\MyProject\Client New\uRegAdd.dfm</Transaction>
+    <Transaction>2010.11.08 19:21:56.453.pas,C:\MyProject\Client New\Unit9.pas=C:\MyProject\Client New\uWebcam.pas</Transaction>
+    <Transaction>2010.11.08 19:21:56.453.dfm,C:\MyProject\Client New\Unit9.dfm=C:\MyProject\Client New\uWebcam.dfm</Transaction>
+    <Transaction>2010.11.26 16:12:37.671.pas,C:\MyProject\Client New\Unit10.pas=C:\MyProject\Client New\uControl.pas</Transaction>
+    <Transaction>2010.11.26 16:12:37.671.dfm,C:\MyProject\Client New\Unit10.dfm=C:\MyProject\Client New\uControl.dfm</Transaction>
+    <Transaction>2010.11.27 22:28:17.984.pas,C:\MyProject\Client New\uRegistrymanager.pas=</Transaction>
+    <Transaction>2010.11.27 22:28:17.984.dfm,C:\MyProject\Client New\uRegistrymanager.dfm=</Transaction>
+    <Transaction>2010.11.27 22:46:06.343.pas,C:\MyProject\Client New\uFilemanager.pas=</Transaction>
+    <Transaction>2010.11.27 22:46:06.343.dfm,C:\MyProject\Client New\uFilemanager.dfm=</Transaction>
+    <Transaction>2010.11.27 23:17:03.937.pas,C:\MyProject\Client New\uManager.pas=</Transaction>
+    <Transaction>2010.11.27 23:17:03.937.dfm,C:\MyProject\Client New\uManager.dfm=</Transaction>
+    <Transaction>2010.11.27 23:58:22.390.pas,C:\MyProject\Client New\uKeylogger.pas=</Transaction>
+    <Transaction>2010.11.27 23:58:22.390.dfm,C:\MyProject\Client New\uKeylogger.dfm=</Transaction>
+    <Transaction>2010.11.28 00:07:05.187.pas,C:\MyProject\Client New\uRemoteShell.pas=</Transaction>
+    <Transaction>2010.11.28 00:07:05.187.dfm,C:\MyProject\Client New\uRemoteShell.dfm=</Transaction>
+    <Transaction>2014.02.24 10:36:50.087.pas,C:\Users\Bosko\Desktop\Hai Vo\RAT\VERSION 2\Client\Unit1.pas=C:\Users\Bosko\Desktop\Hai Vo\RAT\VERSION 2\Client\shcSQLite.pas</Transaction>
+    <Transaction>2014.02.24 10:37:28.356.pas,C:\Users\Bosko\Desktop\Hai Vo\RAT\VERSION 2\Client\shcSQLite.pas=</Transaction>
+  </Transactions>
+</BorlandProject>

